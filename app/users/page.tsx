@@ -1,8 +1,7 @@
-import {auth} from "@/auth"
-
+import UserList from "@/app/users/components/UserList";
 
 export default async function Home() {
-    const session = await auth();
+
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
@@ -11,8 +10,7 @@ export default async function Home() {
                 <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
                     <div className="flex flex-col rounded-md bg-gray-100">
                         <div className="rounded-t-md bg-gray-200 p-4 font-bold">
-                            Current Session
-                            <pre>{JSON.stringify(session, null, 2)}</pre>
+                            <UserList />
                         </div>
                     </div>
                 </div>

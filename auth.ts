@@ -15,7 +15,7 @@ export const config = {
             wellKnown: process.env.OPENID_DICT_WELL_KNOWN,
             clientId: process.env.OPENID_DICT_CLIENT_ID!,
             clientSecret: process.env.OPENID_DICT_CLIENT_SECRET!,
-            authorization: {params: {scope: 'openid profile email'}},
+            authorization: {params: {scope: 'openid profile email roles api'}},
             idToken: true,
             checks: ['pkce', 'state'],
             profile(profile) {
