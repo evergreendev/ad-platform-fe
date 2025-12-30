@@ -6,6 +6,18 @@ import type {
 import type { NextAuthOptions } from "next-auth"
 import { getServerSession } from "next-auth"
 
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    accessToken?: string
+  }
+}
+
 export const config = {
     providers: [
         {
@@ -34,6 +46,12 @@ export const config = {
                 token.accessToken = account.access_token
             }
             return token
+        },
+        async session({ session, token }) {
+            if (token?.accessToken) {
+                session.accessToken = token.accessToken
+            }
+            return session
         }
     },
     session: {strategy: 'jwt'},
