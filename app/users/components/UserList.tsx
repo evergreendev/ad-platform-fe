@@ -5,7 +5,7 @@ const UserList = () => {
     const [data, setData] = useState<any>(null)
 
     useEffect(() => {
-        fetch("/api/proxy/user", { cache: "no-store" })
+        fetch("/api/proxy/users", { cache: "no-store" })
             .then(r => {
                 if (r.status === 401) window.location.href = "/api/auth/signin"
                 return r.json()

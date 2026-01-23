@@ -11,7 +11,7 @@ export async function registerUser(formData: FormData){
         redirect('/api/auth/signin');
     }
 
-    const res = await fetch(`${process.env.API_BASE_URL}/user`,{
+    const res = await fetch(`${process.env.AUTH_BASE_URL}/user`,{
         method: 'POST',
         body: JSON.stringify({
             "Email": email as string,
