@@ -46,7 +46,7 @@ const CompaniesPage = () => {
   const handleSearch = (newParams: Record<string, string>) => {
     const params = new URLSearchParams();
     Object.entries(newParams).forEach(([key, value]) => {
-      if (value) params.set(key, value);
+      if (value !== undefined && value !== null && value !== "") params.set(key, value);
     });
     // Reset to page 1 on new search
     params.set("Page", "1");
