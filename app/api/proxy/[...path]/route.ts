@@ -13,7 +13,7 @@ async function handler(req: NextRequest, params: { path: string[] }) {
     }
 
     const url = new URL(req.url||"");
-    const upstream = `${API_BASE_URL}/${params.path.join("/")}${url.search}`;
+    const upstream = `${API_BASE_URL}/api/${params.path.join("/")}${url.search}`;
 
     //Forward body only for methods that support it
     const body = req.method === "GET" || req.method === "HEAD" ? undefined : req.body;
