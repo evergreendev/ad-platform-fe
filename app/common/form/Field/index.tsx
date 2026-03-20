@@ -1,6 +1,6 @@
 const Field = (
-    {fieldName, labelOverride}
-    : { fieldName: string, labelOverride?: string }) => {
+    {fieldName, labelOverride, defaultValue}
+    : { fieldName: string, labelOverride?: string, defaultValue?: string }) => {
     const defaultLabel = fieldName
         .replace(/([A-Z])/g, ' $1')
         .replace(/^./, str => str.toUpperCase())
@@ -9,7 +9,7 @@ const Field = (
 
     return <div className="m-4">
         <label className="mr-2" htmlFor={fieldName}>{label}:</label>
-        <input className="bg-white border border-green-100 p-2 rounded" type="text" name={fieldName}/>
+        <input className="bg-white border border-green-100 p-2 rounded" type="text" name={fieldName} defaultValue={defaultValue}/>
     </div>
 }
 
