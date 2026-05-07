@@ -1,68 +1,86 @@
 import type {
-    GetServerSidePropsContext,
-    NextApiRequest,
-    NextApiResponse,
-} from "next"
-import type { NextAuthOptions } from "next-auth"
-import { getServerSession } from "next-auth"
+  GetServerSidePropsContext,
+  NextApiRequest,
+  NextApiResponse,
+} from "next";
+import type { NextAuthOptions } from "next-auth";
+import { getServerSession } from "next-auth";
+
+const ACCESS_TOKEN_EXPIRED = "AccessTokenExpired" as const;
 
 declare module "next-auth" {
   interface Session {
-    accessToken?: string
+    accessToken?: string;
+    error?: typeof ACCESS_TOKEN_EXPIRED;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    accessToken?: string
+    accessToken?: string;
+    accessTokenExpires?: number;
+    error?: typeof ACCESS_TOKEN_EXPIRED;
   }
 }
 
 export const config = {
-    providers: [
-        {
-            id: 'openiddict',
-            name: "OpenIddict",
-            type: "oauth",
-            wellKnown: process.env.OPENID_DICT_WELL_KNOWN,
-            clientId: process.env.OPENID_DICT_CLIENT_ID!,
-            clientSecret: process.env.OPENID_DICT_CLIENT_SECRET!,
-            authorization: {params: {scope: 'openid profile email roles api'}},
-            idToken: true,
-            checks: ['pkce', 'state'],
-            profile(profile) {
-                return {
-                    id: profile.sub,
-                    name: profile.name ?? null,
-                    email: profile.email ?? null,
-                }
-            },
-        }
-    ],
-    callbacks: {
-        async jwt({ token, account }) {
-            // Only on sign-in
-            if (account?.access_token) {
-                token.accessToken = account.access_token
-            }
-            return token
-        },
-        async session({ session, token }) {
-            if (token?.accessToken) {
-                session.accessToken = token.accessToken
-            }
-            return session
-        }
+  providers: [
+    {
+      id: "openiddict",
+      name: "OpenIddict",
+      type: "oauth",
+      wellKnown: process.env.OPENID_DICT_WELL_KNOWN,
+      clientId: process.env.OPENID_DICT_CLIENT_ID,
+      clientSecret: process.env.OPENID_DICT_CLIENT_SECRET,
+      authorization: { params: { scope: "openid profile email roles api" } },
+      idToken: true,
+      checks: ["pkce", "state"],
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name ?? null,
+          email: profile.email ?? null,
+        };
+      },
     },
-    session: {strategy: 'jwt'},
-} satisfies NextAuthOptions
+  ],
+  callbacks: {
+    async jwt({ token, account }) {
+      // Only on sign-in
+      if (account?.access_token) {
+        token.accessToken = account.access_token;
+        token.accessTokenExpires = account.expires_at
+          ? account.expires_at * 1000
+          : undefined;
+        token.error = undefined;
+      }
+
+      if (token.accessTokenExpires && Date.now() >= token.accessTokenExpires) {
+        token.accessToken = undefined;
+        token.error = ACCESS_TOKEN_EXPIRED;
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
+      if (token?.accessToken) {
+        session.accessToken = token.accessToken;
+      }
+      if (token?.error) {
+        session.error = token.error;
+      }
+      return session;
+    },
+  },
+  session: { strategy: "jwt" },
+} satisfies NextAuthOptions;
 
 // Use it in server contexts
 export function auth(
-    ...args:
-        | [GetServerSidePropsContext["req"], GetServerSidePropsContext["res"]]
-        | [NextApiRequest, NextApiResponse]
-        | []
+  ...args:
+    | [GetServerSidePropsContext["req"], GetServerSidePropsContext["res"]]
+    | [NextApiRequest, NextApiResponse]
+    | []
 ) {
-    return getServerSession(...args, config)
+  return getServerSession(...args, config);
 }

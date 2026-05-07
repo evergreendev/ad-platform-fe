@@ -1,6 +1,6 @@
-import { auth } from "@/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 
 export default async function ProtectedLayout({
   children,
@@ -9,10 +9,10 @@ export default async function ProtectedLayout({
 }) {
   const session = await auth();
 
-  if (!session) {
+  if (!session || session.error === "AccessTokenExpired") {
     const headersList = await headers();
     const pathname = headersList.get("x-pathname") || "/users";
-    redirect(`/api/auth/signin?callbackUrl=${pathname}`);
+    redirect(`/api/auth/signin?callbackUrl=${encodeURIComponent(pathname)}`);
   }
 
   return <>{children}</>;

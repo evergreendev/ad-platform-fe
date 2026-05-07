@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/Campaigns": {
+    "/api/v1/Campaigns": {
         parameters: {
             query?: never;
             header?: never;
@@ -68,7 +68,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/Campaigns/{id}": {
+    "/api/v1/Campaigns/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -107,7 +107,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/Campaigns/{id}/contacts": {
+    "/api/v1/Campaigns/{id}/contacts": {
         parameters: {
             query?: never;
             header?: never;
@@ -142,13 +142,38 @@ export interface paths {
                 };
             };
         };
-        delete?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": string[];
+                    "text/json": string[];
+                    "application/*+json": string[];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/Campaigns/{id}/companies": {
+    "/api/v1/Campaigns/{id}/companies": {
         parameters: {
             query?: never;
             header?: never;
@@ -189,7 +214,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/Companies/search": {
+    "/api/v1/Companies/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -242,7 +267,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/Companies": {
+    "/api/v1/Companies": {
         parameters: {
             query?: never;
             header?: never;
@@ -306,7 +331,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/Companies/{id}": {
+    "/api/v1/Companies/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -345,7 +370,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/Contacts": {
+    "/api/v1/Contacts": {
         parameters: {
             query?: never;
             header?: never;
@@ -409,7 +434,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/Contacts/{id}": {
+    "/api/v1/Contacts/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -448,7 +473,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/EmailMarketing/send": {
+    "/api/v1/EmailMarketing/send": {
         parameters: {
             query?: never;
             header?: never;
@@ -491,7 +516,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/Integrations": {
+    "/api/v1/Integrations": {
         parameters: {
             query?: never;
             header?: never;
@@ -534,7 +559,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/Integrations/{id}": {
+    "/api/v1/Integrations/{id}": {
         parameters: {
             query?: never;
             header?: never;
