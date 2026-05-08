@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useState } from "react";
 import type { components } from "@/app/api/types";
+import Pagination from "@/app/common/components/Pagination";
 import {
   addContactsToCampaign,
   type CampaignActionState,
@@ -29,13 +30,25 @@ const getPrimaryEmail = (contact: Contact) => {
 export default function CampaignContactsForm({
   campaign,
   contacts,
+  totalContacts,
+  contactPage,
+  contactPageSize,
   campaignContacts,
   totalCampaignContacts,
+  campaignContactPage,
+  campaignContactPageSize,
+  existingCampaignContactIds,
 }: {
   campaign: Campaign;
   contacts: Contact[];
+  totalContacts: number;
+  contactPage: number;
+  contactPageSize: number;
   campaignContacts: CampaignContact[];
   totalCampaignContacts: number;
+  campaignContactPage: number;
+  campaignContactPageSize: number;
+  existingCampaignContactIds: string[];
 }) {
   const addContactsToCurrentCampaign = addContactsToCampaign.bind(
     null,
@@ -60,18 +73,17 @@ export default function CampaignContactsForm({
     Set<string>
   >(() => new Set());
   const [
+    allAvailableContactsAcrossPagesSelected,
+    setAllAvailableContactsAcrossPagesSelected,
+  ] = useState(false);
+  const [
     allCampaignContactsAcrossPagesSelected,
     setAllCampaignContactsAcrossPagesSelected,
   ] = useState(false);
 
   const existingContactIds = useMemo(
-    () =>
-      new Set(
-        campaignContacts
-          ?.map((campaignContact) => campaignContact.contactId)
-          .filter((contactId): contactId is string => Boolean(contactId)) ?? [],
-      ),
-    [campaignContacts],
+    () => new Set(existingCampaignContactIds),
+    [existingCampaignContactIds],
   );
 
   const availableContacts = useMemo(
@@ -95,6 +107,15 @@ export default function CampaignContactsForm({
     availableContacts.every(
       (contact) => contact.id && selectedContactIds.has(contact.id),
     );
+  const totalAvailableContacts = Math.max(
+    totalContacts - existingContactIds.size,
+    0,
+  );
+  const hasMultipleAvailableContactPages =
+    totalAvailableContacts > availableContacts.length;
+  const selectedAvailableContactCount = allAvailableContactsAcrossPagesSelected
+    ? totalAvailableContacts
+    : selectedContactIds.size;
 
   const allCampaignContactsSelected =
     currentContactIds.length > 0 &&
@@ -108,6 +129,7 @@ export default function CampaignContactsForm({
     : selectedCampaignContactIds.size;
 
   useEffect(() => {
+    setAllAvailableContactsAcrossPagesSelected(false);
     setSelectedContactIds(
       (currentIds) =>
         new Set(
@@ -131,6 +153,7 @@ export default function CampaignContactsForm({
   }, [currentContactIds]);
 
   const toggleAvailableContact = (contactId: string) => {
+    setAllAvailableContactsAcrossPagesSelected(false);
     setSelectedContactIds((currentIds) => {
       const nextIds = new Set(currentIds);
 
@@ -145,6 +168,7 @@ export default function CampaignContactsForm({
   };
 
   const toggleAllAvailableContacts = () => {
+    setAllAvailableContactsAcrossPagesSelected(false);
     setSelectedContactIds(
       allAvailableSelected
         ? new Set()
@@ -197,95 +221,132 @@ export default function CampaignContactsForm({
           action={addFormAction}
           className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
         >
+          {allAvailableContactsAcrossPagesSelected && (
+            <input type="hidden" name="addAllAvailableContacts" value="true" />
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
             <h2 className="text-sm font-semibold text-gray-700">
               Available contacts
             </h2>
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-500">
-                {availableContacts.length} available
+                {totalAvailableContacts} total
               </span>
               <button
                 type="submit"
                 disabled={
-                  selectedContactIds.size === 0 || isAdding || !campaign.id
+                  selectedAvailableContactCount === 0 ||
+                  isAdding ||
+                  !campaign.id
                 }
                 className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
               >
                 {isAdding
                   ? "Adding..."
-                  : `Add selected (${selectedContactIds.size})`}
+                  : `Add selected (${selectedAvailableContactCount})`}
               </button>
             </div>
           </div>
 
           {availableContacts.length === 0 ? (
             <div className="p-8 text-sm text-gray-600">
-              Every loaded contact is already in this campaign.
+              No available contacts on this page.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="w-12 px-4 py-3 text-left">
-                      <input
-                        type="checkbox"
-                        checked={allAvailableSelected}
-                        onChange={toggleAllAvailableContacts}
-                        aria-label="Select all available contacts"
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Contact
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Company
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {availableContacts.map((contact) => {
-                    const contactId = contact.id;
+            <div className="divide-y divide-gray-200">
+              <div className="bg-gray-50 px-4 py-3">
+                <label className="flex items-center gap-3 text-sm text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={allAvailableSelected}
+                    onChange={toggleAllAvailableContacts}
+                    aria-label="Select all available contacts"
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  Select current page
+                </label>
+                {allAvailableSelected &&
+                  hasMultipleAvailableContactPages &&
+                  !allAvailableContactsAcrossPagesSelected && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAllAvailableContactsAcrossPagesSelected(true)
+                      }
+                      className="mt-2 text-sm font-medium text-blue-700 hover:underline"
+                    >
+                      Select all {totalAvailableContacts} available contacts
+                    </button>
+                  )}
+                {allAvailableContactsAcrossPagesSelected && (
+                  <div className="mt-2 text-sm font-medium text-gray-700">
+                    All {totalAvailableContacts} available contacts selected
+                  </div>
+                )}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="w-12 px-4 py-3 text-left" />
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Contact
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                        Company
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {availableContacts.map((contact) => {
+                      const contactId = contact.id;
 
-                    return (
-                      <tr key={contactId ?? getContactName(contact)}>
-                        <td className="px-4 py-4">
-                          {contactId && (
-                            <input
-                              type="checkbox"
-                              name="contactIds"
-                              value={contactId}
-                              checked={selectedContactIds.has(contactId)}
-                              onChange={() => toggleAvailableContact(contactId)}
-                              aria-label={`Select ${getContactName(contact)}`}
-                              className="h-4 w-4 rounded border-gray-300"
-                            />
-                          )}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                          {getContactName(contact)}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                          {getPrimaryEmail(contact)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {contact.companies
-                            ?.map((company) => company.companyName)
-                            .filter(Boolean)
-                            .join(", ") || "No company"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      return (
+                        <tr key={contactId ?? getContactName(contact)}>
+                          <td className="px-4 py-4">
+                            {contactId && (
+                              <input
+                                type="checkbox"
+                                name="contactIds"
+                                value={contactId}
+                                checked={selectedContactIds.has(contactId)}
+                                onChange={() =>
+                                  toggleAvailableContact(contactId)
+                                }
+                                aria-label={`Select ${getContactName(contact)}`}
+                                className="h-4 w-4 rounded border-gray-300"
+                              />
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                            {getContactName(contact)}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                            {getPrimaryEmail(contact)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {contact.companies
+                              ?.map((company) => company.companyName)
+                              .filter(Boolean)
+                              .join(", ") || "No company"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
+          <Pagination
+            totalCount={totalContacts}
+            pageSize={contactPageSize}
+            currentPage={contactPage}
+            pageParamName="ContactPage"
+          />
         </form>
 
         <form
@@ -399,6 +460,12 @@ export default function CampaignContactsForm({
               No contacts have been added to this campaign.
             </div>
           )}
+          <Pagination
+            totalCount={totalCampaignContacts}
+            pageSize={campaignContactPageSize}
+            currentPage={campaignContactPage}
+            pageParamName="CampaignContactPage"
+          />
         </form>
       </div>
     </div>

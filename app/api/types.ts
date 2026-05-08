@@ -13,7 +13,10 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    Page?: number;
+                    PageSize?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -26,9 +29,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["CampaignResponse"][];
-                        "application/json": components["schemas"]["CampaignResponse"][];
-                        "text/json": components["schemas"]["CampaignResponse"][];
+                        "text/plain": components["schemas"]["CampaignResponsePagedResponse"];
+                        "application/json": components["schemas"]["CampaignResponsePagedResponse"];
+                        "text/json": components["schemas"]["CampaignResponsePagedResponse"];
                     };
                 };
             };
@@ -300,28 +303,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["CompanyResponse"][];
-                        "application/json": components["schemas"]["CompanyResponse"][];
-                        "text/json": components["schemas"]["CompanyResponse"][];
-                    };
-                };
-            };
-        };
+        get?: never;
         put?: never;
         post: {
             parameters: {
@@ -396,6 +378,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Companies/{id}/contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CompanyContactResponsePagedResponse"];
+                        "application/json": components["schemas"]["CompanyContactResponsePagedResponse"];
+                        "text/json": components["schemas"]["CompanyContactResponsePagedResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Contacts": {
         parameters: {
             query?: never;
@@ -405,7 +429,10 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    Page?: number;
+                    PageSize?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -418,9 +445,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ContactResponse"][];
-                        "application/json": components["schemas"]["ContactResponse"][];
-                        "text/json": components["schemas"]["ContactResponse"][];
+                        "text/plain": components["schemas"]["ContactResponsePagedResponse"];
+                        "application/json": components["schemas"]["ContactResponsePagedResponse"];
+                        "text/json": components["schemas"]["ContactResponsePagedResponse"];
                     };
                 };
             };
@@ -718,6 +745,15 @@ export interface components {
             /** Format: int32 */
             contactCount?: number;
         };
+        CampaignResponsePagedResponse: {
+            items?: components["schemas"]["CampaignResponse"][] | null;
+            /** Format: int32 */
+            totalCount?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            pageSize?: number;
+        };
         /** @enum {string} */
         CampaignStatus: "Draft" | "Active" | "Completed";
         Company: {
@@ -806,6 +842,15 @@ export interface components {
             isPrimary?: boolean;
             notes?: string | null;
         };
+        CompanyContactResponsePagedResponse: {
+            items?: components["schemas"]["CompanyContactResponse"][] | null;
+            /** Format: int32 */
+            totalCount?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            pageSize?: number;
+        };
         CompanyContactRole: {
             /** Format: uuid */
             companyContactId?: string;
@@ -844,7 +889,8 @@ export interface components {
             isActive?: boolean;
             isNewCompany?: boolean;
             companySpecialBilling?: boolean | null;
-            contacts?: components["schemas"]["CompanyContactResponse"][] | null;
+            /** Format: int32 */
+            contactCount?: number;
         };
         Contact: {
             /** Format: uuid */
@@ -937,6 +983,15 @@ export interface components {
             lastUpdatedDate?: string | null;
             emails?: components["schemas"]["ContactEmailResponse"][] | null;
             companies?: components["schemas"]["ContactCompanyResponse"][] | null;
+        };
+        ContactResponsePagedResponse: {
+            items?: components["schemas"]["ContactResponse"][] | null;
+            /** Format: int32 */
+            totalCount?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            pageSize?: number;
         };
         CreateCompanyRequest: {
             companyName: string;

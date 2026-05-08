@@ -78,6 +78,54 @@ const getAllCampaignContactIds = async (campaignId: string) => {
   return { contactIds: [...contactIds] };
 };
 
+const getAllContactIds = async () => {
+  const pageSize = 500;
+  const contactIds = new Set<string>();
+  let page = 1;
+  let fetchedCount = 0;
+  let totalCount = 0;
+
+  do {
+    const { data, response } = await client.GET("/api/v1/Contacts", {
+      params: {
+        query: {
+          Page: page,
+          PageSize: pageSize,
+        },
+      },
+      cache: "no-store",
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      redirect("/api/auth/signin?callbackUrl=/campaigns");
+    }
+
+    if (!response.ok) {
+      return {
+        error: `Failed to load contacts: ${response.status} ${response.statusText}`,
+      };
+    }
+
+    totalCount = data?.totalCount ?? 0;
+    const contacts = data?.items ?? [];
+    fetchedCount += contacts.length;
+
+    for (const contact of contacts) {
+      if (contact.id) {
+        contactIds.add(contact.id);
+      }
+    }
+
+    if (contacts.length === 0) {
+      break;
+    }
+
+    page += 1;
+  } while (fetchedCount < totalCount);
+
+  return { contactIds: [...contactIds] };
+};
+
 export async function createCampaign(
   _previousState: CampaignActionState,
   formData: FormData,
@@ -174,7 +222,29 @@ export async function addContactsToCampaign(
   _previousState: CampaignActionState,
   formData: FormData,
 ): Promise<CampaignActionState> {
-  const contactIds = getStringValues(formData, "contactIds");
+  const shouldAddAllAvailableContacts =
+    formData.get("addAllAvailableContacts") === "true";
+  let contactIds = getStringValues(formData, "contactIds");
+
+  if (shouldAddAllAvailableContacts) {
+    const [allContactIds, allCampaignContactIds] = await Promise.all([
+      getAllContactIds(),
+      getAllCampaignContactIds(campaignId),
+    ]);
+
+    if ("error" in allContactIds) {
+      return { error: allContactIds.error };
+    }
+
+    if ("error" in allCampaignContactIds) {
+      return { error: allCampaignContactIds.error };
+    }
+
+    const existingContactIds = new Set(allCampaignContactIds.contactIds);
+    contactIds = allContactIds.contactIds.filter(
+      (contactId) => !existingContactIds.has(contactId),
+    );
+  }
 
   if (contactIds.length === 0) {
     return { error: "Select at least one contact to add." };

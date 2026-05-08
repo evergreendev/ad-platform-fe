@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import client from "@/app/api/client";
-import Pagination from "@/app/common/components/Pagination";
 import CampaignContactsForm from "../components/CampaignContactsForm";
 
 const DEFAULT_PAGE = 1;
@@ -19,11 +18,70 @@ const getPositiveInteger = (
     : fallback;
 };
 
-const createCampaignContactsPageUrl = (
-  campaignId: string,
-  page: number,
-  pageSize: number,
-) => `/campaigns/${campaignId}?Page=${page}&PageSize=${pageSize}`;
+const createCampaignPageUrl = ({
+  campaignId,
+  contactPage,
+  contactPageSize,
+  campaignContactPage,
+  campaignContactPageSize,
+}: {
+  campaignId: string;
+  contactPage: number;
+  contactPageSize: number;
+  campaignContactPage: number;
+  campaignContactPageSize: number;
+}) =>
+  `/campaigns/${campaignId}?ContactPage=${contactPage}&ContactPageSize=${contactPageSize}&CampaignContactPage=${campaignContactPage}&CampaignContactPageSize=${campaignContactPageSize}`;
+
+const getAllCampaignContactIds = async (campaignId: string) => {
+  const contactIds = new Set<string>();
+  const pageSize = 500;
+  let page = 1;
+  let fetchedCount = 0;
+  let totalCount = 0;
+
+  do {
+    const { data, response } = await client.GET(
+      "/api/v1/Campaigns/{id}/contacts",
+      {
+        params: {
+          path: { id: campaignId },
+          query: {
+            Page: page,
+            PageSize: pageSize,
+          },
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (response.status === 401 || response.status === 403) {
+      redirect(`/api/auth/signin?callbackUrl=/campaigns/${campaignId}`);
+    }
+
+    if (!response.ok) {
+      return { contactIds: [...contactIds] };
+    }
+
+    const campaignContacts = data?.items ?? [];
+    totalCount = data?.totalCount ?? 0;
+    fetchedCount += campaignContacts.length;
+
+    for (const campaignContact of campaignContacts) {
+      if (campaignContact.contactId) {
+        contactIds.add(campaignContact.contactId);
+      }
+    }
+
+    if (campaignContacts.length === 0) {
+      break;
+    }
+
+    page += 1;
+  } while (fetchedCount < totalCount);
+
+  return { contactIds: [...contactIds] };
+};
 
 export default async function CampaignDetailPage({
   params,
@@ -34,33 +92,52 @@ export default async function CampaignDetailPage({
 }) {
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
-  const page = getPositiveInteger(resolvedSearchParams.Page, DEFAULT_PAGE);
-  const pageSize = getPositiveInteger(
-    resolvedSearchParams.PageSize,
+  const contactPage = getPositiveInteger(
+    resolvedSearchParams.ContactPage,
+    DEFAULT_PAGE,
+  );
+  const contactPageSize = getPositiveInteger(
+    resolvedSearchParams.ContactPageSize,
+    DEFAULT_PAGE_SIZE,
+  );
+  const campaignContactPage = getPositiveInteger(
+    resolvedSearchParams.CampaignContactPage,
+    DEFAULT_PAGE,
+  );
+  const campaignContactPageSize = getPositiveInteger(
+    resolvedSearchParams.CampaignContactPageSize,
     DEFAULT_PAGE_SIZE,
   );
   const [
     { data: campaign, response: campaignResponse },
     { data: contacts, response: contactsResponse },
     { data: campaignContacts, response: campaignContactsResponse },
+    { contactIds: existingCampaignContactIds },
   ] = await Promise.all([
     client.GET("/api/v1/Campaigns/{id}", {
       params: { path: { id } },
       cache: "no-store",
     }),
     client.GET("/api/v1/Contacts", {
+      params: {
+        query: {
+          Page: contactPage,
+          PageSize: contactPageSize,
+        },
+      },
       cache: "no-store",
     }),
     client.GET("/api/v1/Campaigns/{id}/contacts", {
       params: {
         path: { id },
         query: {
-          Page: page,
-          PageSize: pageSize,
+          Page: campaignContactPage,
+          PageSize: campaignContactPageSize,
         },
       },
       cache: "no-store",
     }),
+    getAllCampaignContactIds(id),
   ]);
 
   if (
@@ -78,13 +155,40 @@ export default async function CampaignDetailPage({
     notFound();
   }
 
-  if (campaignContactsResponse.ok && campaignContacts) {
-    const totalCount = campaignContacts.totalCount ?? 0;
-    const resolvedPageSize = campaignContacts.pageSize ?? pageSize;
+  if (contactsResponse.ok && contacts) {
+    const totalCount = contacts.totalCount ?? 0;
+    const resolvedPageSize = contacts.pageSize ?? contactPageSize;
     const lastPage = Math.max(1, Math.ceil(totalCount / resolvedPageSize));
 
-    if (page > lastPage) {
-      redirect(createCampaignContactsPageUrl(id, lastPage, resolvedPageSize));
+    if (contactPage > lastPage) {
+      redirect(
+        createCampaignPageUrl({
+          campaignId: id,
+          contactPage: lastPage,
+          contactPageSize: resolvedPageSize,
+          campaignContactPage,
+          campaignContactPageSize,
+        }),
+      );
+    }
+  }
+
+  if (campaignContactsResponse.ok && campaignContacts) {
+    const totalCount = campaignContacts.totalCount ?? 0;
+    const resolvedPageSize =
+      campaignContacts.pageSize ?? campaignContactPageSize;
+    const lastPage = Math.max(1, Math.ceil(totalCount / resolvedPageSize));
+
+    if (campaignContactPage > lastPage) {
+      redirect(
+        createCampaignPageUrl({
+          campaignId: id,
+          contactPage,
+          contactPageSize,
+          campaignContactPage: lastPage,
+          campaignContactPageSize: resolvedPageSize,
+        }),
+      );
     }
   }
 
@@ -122,15 +226,17 @@ export default async function CampaignDetailPage({
 
         <CampaignContactsForm
           campaign={campaign}
-          contacts={contacts ?? []}
+          contacts={contacts?.items ?? []}
+          totalContacts={contacts?.totalCount ?? 0}
+          contactPage={contacts?.page ?? contactPage}
+          contactPageSize={contacts?.pageSize ?? contactPageSize}
           campaignContacts={campaignContacts?.items ?? []}
           totalCampaignContacts={campaignContacts?.totalCount ?? 0}
-        />
-
-        <Pagination
-          totalCount={campaignContacts?.totalCount ?? 0}
-          pageSize={campaignContacts?.pageSize ?? pageSize}
-          currentPage={campaignContacts?.page ?? page}
+          campaignContactPage={campaignContacts?.page ?? campaignContactPage}
+          campaignContactPageSize={
+            campaignContacts?.pageSize ?? campaignContactPageSize
+          }
+          existingCampaignContactIds={existingCampaignContactIds}
         />
       </main>
     </div>
