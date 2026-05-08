@@ -26,6 +26,58 @@ const getStringValues = (formData: FormData, fieldName: string) =>
     .getAll(fieldName)
     .filter((value): value is string => typeof value === "string" && !!value);
 
+const getAllCampaignContactIds = async (campaignId: string) => {
+  const pageSize = 500;
+  const contactIds = new Set<string>();
+  let page = 1;
+  let fetchedCount = 0;
+  let totalCount = 0;
+
+  do {
+    const { data, response } = await client.GET(
+      "/api/v1/Campaigns/{id}/contacts",
+      {
+        params: {
+          path: { id: campaignId },
+          query: {
+            Page: page,
+            PageSize: pageSize,
+          },
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (response.status === 401 || response.status === 403) {
+      redirect(`/api/auth/signin?callbackUrl=/campaigns/${campaignId}`);
+    }
+
+    if (!response.ok) {
+      return {
+        error: `Failed to load campaign contacts: ${response.status} ${response.statusText}`,
+      };
+    }
+
+    totalCount = data?.totalCount ?? 0;
+    const campaignContacts = data?.items ?? [];
+    fetchedCount += campaignContacts.length;
+
+    for (const campaignContact of campaignContacts) {
+      if (campaignContact.contactId) {
+        contactIds.add(campaignContact.contactId);
+      }
+    }
+
+    if (campaignContacts.length === 0) {
+      break;
+    }
+
+    page += 1;
+  } while (fetchedCount < totalCount);
+
+  return { contactIds: [...contactIds] };
+};
+
 export async function createCampaign(
   _previousState: CampaignActionState,
   formData: FormData,
@@ -154,7 +206,19 @@ export async function removeContactsFromCampaign(
   _previousState: CampaignActionState,
   formData: FormData,
 ): Promise<CampaignActionState> {
-  const contactIds = getStringValues(formData, "contactIds");
+  const shouldRemoveAllCampaignContacts =
+    formData.get("removeAllCampaignContacts") === "true";
+  let contactIds = getStringValues(formData, "contactIds");
+
+  if (shouldRemoveAllCampaignContacts) {
+    const allCampaignContactIds = await getAllCampaignContactIds(campaignId);
+
+    if ("error" in allCampaignContactIds) {
+      return { error: allCampaignContactIds.error };
+    }
+
+    contactIds = allCampaignContactIds.contactIds;
+  }
 
   if (contactIds.length === 0) {
     return { error: "Select at least one contact to remove." };

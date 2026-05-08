@@ -175,7 +175,7 @@ export default function CampaignsTable({
                         {campaign.status ?? "Not set"}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                        {campaign.contacts?.length ?? 0}
+                        {campaign.contactCount ?? 0}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
                         {formatDate(campaign.updatedAt ?? campaign.createdAt)}

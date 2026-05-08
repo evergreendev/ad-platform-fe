@@ -114,7 +114,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: {
+                    Page?: number;
+                    PageSize?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CampaignContactResponsePagedResponse"];
+                        "application/json": components["schemas"]["CampaignContactResponsePagedResponse"];
+                        "text/json": components["schemas"]["CampaignContactResponsePagedResponse"];
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -670,6 +696,15 @@ export interface components {
             /** Format: date-time */
             assignedAt?: string;
         };
+        CampaignContactResponsePagedResponse: {
+            items?: components["schemas"]["CampaignContactResponse"][] | null;
+            /** Format: int32 */
+            totalCount?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            pageSize?: number;
+        };
         CampaignResponse: {
             /** Format: uuid */
             id?: string;
@@ -680,7 +715,8 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
-            contacts?: components["schemas"]["CampaignContactResponse"][] | null;
+            /** Format: int32 */
+            contactCount?: number;
         };
         /** @enum {string} */
         CampaignStatus: "Draft" | "Active" | "Completed";

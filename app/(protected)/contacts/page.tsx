@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 import client from "@/app/api/client";
 
 export default async function Page() {
-  const { data: contacts, response } = await client.GET("/api/Contacts");
+  const { data: contacts, response } = await client.GET("/api/v1/Contacts", {
+    cache: "no-store",
+  });
 
   if (response.status === 401 || response.status === 403) {
     redirect("/api/auth/signin?callbackUrl=/contacts");

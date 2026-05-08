@@ -10,6 +10,7 @@ import {
 
 type Campaign = components["schemas"]["CampaignResponse"];
 type Contact = components["schemas"]["ContactResponse"];
+type CampaignContact = components["schemas"]["CampaignContactResponse"];
 
 const initialActionState: CampaignActionState = {};
 
@@ -28,9 +29,13 @@ const getPrimaryEmail = (contact: Contact) => {
 export default function CampaignContactsForm({
   campaign,
   contacts,
+  campaignContacts,
+  totalCampaignContacts,
 }: {
   campaign: Campaign;
   contacts: Contact[];
+  campaignContacts: CampaignContact[];
+  totalCampaignContacts: number;
 }) {
   const addContactsToCurrentCampaign = addContactsToCampaign.bind(
     null,
@@ -54,11 +59,10 @@ export default function CampaignContactsForm({
   const [selectedCampaignContactIds, setSelectedCampaignContactIds] = useState<
     Set<string>
   >(() => new Set());
-
-  const campaignContacts = useMemo(
-    () => campaign.contacts ?? [],
-    [campaign.contacts],
-  );
+  const [
+    allCampaignContactsAcrossPagesSelected,
+    setAllCampaignContactsAcrossPagesSelected,
+  ] = useState(false);
 
   const existingContactIds = useMemo(
     () =>
@@ -97,6 +101,11 @@ export default function CampaignContactsForm({
     currentContactIds.every((contactId) =>
       selectedCampaignContactIds.has(contactId),
     );
+  const hasMultipleCampaignContactPages =
+    totalCampaignContacts > campaignContacts.length;
+  const selectedCampaignContactCount = allCampaignContactsAcrossPagesSelected
+    ? totalCampaignContacts
+    : selectedCampaignContactIds.size;
 
   useEffect(() => {
     setSelectedContactIds(
@@ -110,6 +119,7 @@ export default function CampaignContactsForm({
   }, [availableContacts]);
 
   useEffect(() => {
+    setAllCampaignContactsAcrossPagesSelected(false);
     setSelectedCampaignContactIds(
       (currentIds) =>
         new Set(
@@ -147,6 +157,7 @@ export default function CampaignContactsForm({
   };
 
   const toggleCampaignContact = (contactId: string) => {
+    setAllCampaignContactsAcrossPagesSelected(false);
     setSelectedCampaignContactIds((currentIds) => {
       const nextIds = new Set(currentIds);
 
@@ -161,6 +172,7 @@ export default function CampaignContactsForm({
   };
 
   const toggleAllCampaignContacts = () => {
+    setAllCampaignContactsAcrossPagesSelected(false);
     setSelectedCampaignContactIds(
       allCampaignContactsSelected ? new Set() : new Set(currentContactIds),
     );
@@ -280,37 +292,69 @@ export default function CampaignContactsForm({
           action={removeFormAction}
           className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
         >
+          {allCampaignContactsAcrossPagesSelected && (
+            <input
+              type="hidden"
+              name="removeAllCampaignContacts"
+              value="true"
+            />
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
             <h2 className="text-sm font-semibold text-gray-700">
               Campaign contacts
             </h2>
-            <button
-              type="submit"
-              disabled={
-                selectedCampaignContactIds.size === 0 ||
-                isRemoving ||
-                !campaign.id
-              }
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
-            >
-              {isRemoving
-                ? "Removing..."
-                : `Remove selected (${selectedCampaignContactIds.size})`}
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">
+                {totalCampaignContacts} total
+              </span>
+              <button
+                type="submit"
+                disabled={
+                  selectedCampaignContactCount === 0 ||
+                  isRemoving ||
+                  !campaign.id
+                }
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+              >
+                {isRemoving
+                  ? "Removing..."
+                  : `Remove selected (${selectedCampaignContactCount})`}
+              </button>
+            </div>
           </div>
 
           {campaignContacts.length ? (
             <div className="divide-y divide-gray-200">
-              <label className="flex items-center gap-3 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={allCampaignContactsSelected}
-                  onChange={toggleAllCampaignContacts}
-                  aria-label="Select all campaign contacts"
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                Select all
-              </label>
+              <div className="bg-gray-50 px-4 py-3">
+                <label className="flex items-center gap-3 text-sm text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={allCampaignContactsSelected}
+                    onChange={toggleAllCampaignContacts}
+                    aria-label="Select all campaign contacts"
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  Select current page
+                </label>
+                {allCampaignContactsSelected &&
+                  hasMultipleCampaignContactPages &&
+                  !allCampaignContactsAcrossPagesSelected && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAllCampaignContactsAcrossPagesSelected(true)
+                      }
+                      className="mt-2 text-sm font-medium text-blue-700 hover:underline"
+                    >
+                      Select all {totalCampaignContacts} contacts
+                    </button>
+                  )}
+                {allCampaignContactsAcrossPagesSelected && (
+                  <div className="mt-2 text-sm font-medium text-gray-700">
+                    All {totalCampaignContacts} contacts selected
+                  </div>
+                )}
+              </div>
               {campaignContacts.map((campaignContact) => {
                 const contactId = campaignContact.contactId;
 
