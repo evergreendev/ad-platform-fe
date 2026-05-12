@@ -671,6 +671,7 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
             campaignContacts?: components["schemas"]["CampaignContact"][] | null;
+            emailMessages?: components["schemas"]["EmailMessage"][] | null;
         };
         CampaignActivity: {
             /** Format: uuid */
@@ -806,6 +807,7 @@ export interface components {
             roles?: components["schemas"]["CompanyContactRole"][] | null;
             emails?: components["schemas"]["CompanyContactEmail"][] | null;
             phones?: components["schemas"]["CompanyContactPhone"][] | null;
+            emailMessages?: components["schemas"]["EmailMessage"][] | null;
         };
         CompanyContactDto: {
             /** Format: uuid */
@@ -897,6 +899,7 @@ export interface components {
             id?: string;
             companyContacts?: components["schemas"]["CompanyContact"][] | null;
             emails?: components["schemas"]["ContactEmail"][] | null;
+            emailMessages?: components["schemas"]["EmailMessage"][] | null;
             firstName?: string | null;
             lastName?: string | null;
             addressLine1?: string | null;
@@ -1049,6 +1052,67 @@ export interface components {
             authType: string;
             metadataJson?: string | null;
         };
+        EmailEvent: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            emailMessageId?: string;
+            emailMessage?: components["schemas"]["EmailMessage"];
+            eventType?: string | null;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** Format: date-time */
+            receivedAt?: string | null;
+            providerEventId?: string | null;
+            metadataJson?: string | null;
+        };
+        EmailLink: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            emailMessageId?: string;
+            emailMessage?: components["schemas"]["EmailMessage"];
+            originalUrl?: string | null;
+            label?: string | null;
+        };
+        EmailMessage: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            campaignId?: string | null;
+            campaign?: components["schemas"]["Campaign"];
+            /** Format: uuid */
+            contactId?: string | null;
+            contact?: components["schemas"]["Contact"];
+            /** Format: uuid */
+            companyContactId?: string | null;
+            companyContact?: components["schemas"]["CompanyContact"];
+            /** Format: uuid */
+            mailMergeTemplateId?: string | null;
+            mailMergeTemplate?: components["schemas"]["MailMergeTemplate"];
+            toEmailAddress?: string | null;
+            toDisplayName?: string | null;
+            subject?: string | null;
+            bodyHtml?: string | null;
+            plainText?: string | null;
+            status?: components["schemas"]["EmailMessageStatus"];
+            provider?: string | null;
+            providerMessageId?: string | null;
+            /** Format: date-time */
+            queuedAt?: string | null;
+            /** Format: date-time */
+            sentAt?: string | null;
+            /** Format: date-time */
+            deliveredAt?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            events?: components["schemas"]["EmailEvent"][] | null;
+            links?: components["schemas"]["EmailLink"][] | null;
+        };
+        /** @enum {string} */
+        EmailMessageStatus: "Draft" | "Queued" | "Sending" | "Sent" | "Failed" | "Cancelled";
         /** @enum {string} */
         IntegrationCategory: "EmailMarketing";
         IntegrationResponse: {
@@ -1065,6 +1129,36 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        MailMergeTemplate: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            subjectTemplate?: string | null;
+            bodyJson?: string | null;
+            bodyHtml?: string | null;
+            plainText?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            templateFields?: components["schemas"]["MailMergeTemplateField"][] | null;
+            emailMessages?: components["schemas"]["EmailMessage"][] | null;
+        };
+        MailMergeTemplateField: {
+            /** Format: uuid */
+            templateId?: string;
+            template?: components["schemas"]["MailMergeTemplate"];
+            mergeFieldKey?: string | null;
+            mergeField?: components["schemas"]["MergeField"];
+        };
+        MergeField: {
+            key?: string | null;
+            label?: string | null;
+            entity?: string | null;
+            dataType?: string | null;
+            isActive?: boolean;
+            templateFields?: components["schemas"]["MailMergeTemplateField"][] | null;
         };
         Role: {
             /** Format: int32 */
