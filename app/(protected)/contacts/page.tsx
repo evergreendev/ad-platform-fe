@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import client from "@/app/api/client";
 import Pagination from "@/app/common/components/Pagination";
+import ClientPage from "./page.client";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
@@ -58,20 +59,9 @@ export default async function Page({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans ">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans relative">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white sm:items-start">
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          {contacts.items?.map((contact) => (
-            <div key={contact.id}>
-              <h2>{contact.firstName}</h2>
-              <p>
-                {contact?.companies?.map((company) => (
-                  <span key={company.id}>{company.companyName}, </span>
-                ))}
-              </p>
-            </div>
-          ))}
-        </div>
+        <ClientPage data={contacts}/>
         <Pagination
           totalCount={contacts.totalCount ?? 0}
           pageSize={contacts.pageSize ?? pageSize}
