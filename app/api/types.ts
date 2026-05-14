@@ -1169,11 +1169,19 @@ export interface components {
         };
         SendEmailRequest: {
             /** Format: uuid */
-            integrationId: string;
+            campaignId?: string | null;
+            /** Format: uuid */
+            contactId?: string | null;
+            /** Format: uuid */
+            companyContactId?: string | null;
+            /** Format: uuid */
+            mailMergeTemplateId?: string | null;
             /** Format: email */
             toEmail: string;
+            toName?: string | null;
             subject: string;
             htmlBody: string;
+            plainTextBody?: string | null;
         };
         SendEmailResponse: {
             success?: boolean;
